@@ -19,7 +19,9 @@ io.on("connection", (socket)=>{
     console.log("User connected:", socket.id);
 
     socket.on("disconnect", () => { console.log("User disconnected:", socket.id); });
-
-    const PORT = 3000;
-    server.listen(PORT, ()=> {console.log(`Server running on port ${PORT}`);});
+    socket.on("draw", (data)=>{
+        socket.broadcast.emit("draw", data);
+    });
 })
+const PORT = 3000;
+server.listen(PORT, ()=> {console.log(`Server running on port ${PORT}`);});
