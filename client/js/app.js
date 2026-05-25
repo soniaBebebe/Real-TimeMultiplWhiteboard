@@ -9,11 +9,28 @@ ctx.strokeStyle="black";
 
 let isDrawing=false;
 
+const colorPicker=document.getElementById("colorPicker");
+
+const brushSize=document.getElementById("brushSize");
+
+let currentColor="#000000";
+let currentBrushSize=5;
+
 canvas.addEventListener("mousedown", startDrawing);
 
 canvas.addEventListener("mouseup", stopDrawing);
 
 canvas.addEventListener("mousemove", draw);
+
+colorPicker.addEventListener("input", (event)=>{
+    currentColor=event.target.value;
+    ctx.strokeStyle=currentColor;
+});
+
+brushSize.addEventListener("input", (event)=>{
+    currentBrushSize=event.target.value;
+    ctx.lineWidth=currentBrushSize;
+});
 
 function draw(event){
     if (!isDrawing) return;
@@ -21,12 +38,16 @@ function draw(event){
     const x=event.clientX;
     const y=event.clientY;
 
+    ctx.strokeStyle=currentColor;
+    ctx.lineWidth=currentBrushSize;
     ctx.lineTo(x,y);
     ctx.stroke();
 
     socket.emit("draw",{
         x,
-        y
+        y,
+        color:currentColor,
+        brushSize:currentBrushSize
     });
 
     ctx.beginPath();
@@ -39,6 +60,8 @@ socket.on("start-draw", (data)=>{
 });
 
 socket.on("draw", (data)=>{
+    ctx.strokeStyle=data.color;
+    ctx.lineWidth=data.brushSize;
     ctx.lineTo(data.x, data.y);
     ctx.stroke();
     ctx.beginPath();
