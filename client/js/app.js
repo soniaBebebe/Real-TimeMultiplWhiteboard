@@ -16,6 +16,29 @@ const brushSize=document.getElementById("brushSize");
 let currentColor="#000000";
 let currentBrushSize=5;
 
+const brushTool=document.getElementById("brushTool");
+const eraserTool=document.getElementById("eraserTool");
+const clearBoardButton=document.getElementById("clearBoard");
+
+let currenTool="brush";
+brushTool.classList.add("active");
+
+socket.on("clearBoard", ()=>{
+    clearCanvas();
+});
+
+brushTool.addEventListener("click", ()=>{
+    currenTool="brush";
+    brushTool.classList.add("active");
+    eraserTool.classList.remove("active");
+});
+
+eraserTool.addEventListener("click", ()=>{
+    currenTool="eraser";
+    eraserTool.classList.add("active");
+    brushTool.classList.remove("active");
+});
+
 canvas.addEventListener("mousedown", startDrawing);
 
 canvas.addEventListener("mouseup", stopDrawing);
@@ -32,13 +55,22 @@ brushSize.addEventListener("input", (event)=>{
     ctx.lineWidth=currentBrushSize;
 });
 
+clearBoardButton.addEventListener("click",()=>{
+    clearCanvas();
+    socket.emit("clear-board");
+});
+
 function draw(event){
     if (!isDrawing) return;
 
     const x=event.clientX;
     const y=event.clientY;
 
-    ctx.strokeStyle=currentColor;
+    if(currenTool==="eraser"){
+        ctx.strokeStyle="white";
+    } else{
+        ctx.strokeStyle=currentColor;
+    }
     ctx.lineWidth=currentBrushSize;
     ctx.lineTo(x,y);
     ctx.stroke();
@@ -46,7 +78,9 @@ function draw(event){
     socket.emit("draw",{
         x,
         y,
-        color:currentColor,
+        color:currenTool==="eraser"
+        ?"white"
+        :currentColor,
         brushSize:currentBrushSize
     });
 
@@ -93,4 +127,14 @@ function stopDrawing(){
     isDrawing=false;
     ctx.beginPath();
     socket.emit("end-draw");
+}
+
+function clearCanvas(){
+    ctx.clearRect(
+        0,0,canvas.width, canvas.height
+    );
+    ctx.fillStyle="white";
+    ctx.fillRect(
+        0,0,canvas.width,canvas.height
+    );
 }

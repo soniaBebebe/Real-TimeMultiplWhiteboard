@@ -42,3 +42,20 @@ canvas{
     width:150px;
     cursor:pointer;
 }
+
+.toolBar button{
+    padding:10px 20px;
+    border:none;
+    border-radius: 10px;
+    background:#2f2f2f;
+    color: white;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.toolBar button:hover{
+    background: #444;
+}
+.toolBarbutton.active{
+    background: #0078ff;
+}

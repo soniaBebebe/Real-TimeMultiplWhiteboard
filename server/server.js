@@ -30,6 +30,9 @@ io.on("connection", (socket)=>{
     socket.on("end-draw", ()=>{
         socket.broadcast.emit("end-draw");
     });
+    socket.on("clearBoard", ()=>{
+        socket.broadcast.emit("clearBoard");
+    });
 })
 const PORT = 3000;
 server.listen(PORT, ()=> {console.log(`Server running on port ${PORT}`);});
