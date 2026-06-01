@@ -19,19 +19,35 @@ io.on("connection", (socket)=>{
     console.log("User connected:", socket.id);
 
     socket.on("disconnect", () => { console.log("User disconnected:", socket.id); });
+
     socket.on("start-draw", (data)=>{
-        socket.broadcast.emit("start-draw", data);
+        socket.to(socket.data.roomId).emit("start-draw", data);
     });
 
     socket.on("draw", (data)=>{
-        socket.broadcast.emit("draw", data);
+        socket.to(socket.data.roomId).emit("draw", data);
     });
 
     socket.on("end-draw", ()=>{
-        socket.broadcast.emit("end-draw");
+        socket.to(socket.data.roomId).emit("end-draw");
     });
     socket.on("clearBoard", ()=>{
-        socket.broadcast.emit("clearBoard");
+        socket.to(socket.data.roomId).emit("clearBoard");
+    });
+    socket.on("join-rom", (data)=>{
+        socket.join(data.roomId);
+        socket.data.username=data.username;
+        socket.data.roomId=data.roomId;
+        socket.to(data.roomId).emit("user-joined", {
+            username:data.username
+        });
+    });
+    socket.on("chat-message", (message)=>{
+        const data={
+            username: socket.data.username,
+            message
+        };
+        io.to(socket.data.roomId).emit("chat-message", data);
     });
 })
 const PORT = 3000;

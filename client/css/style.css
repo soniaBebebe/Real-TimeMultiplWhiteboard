@@ -59,3 +59,85 @@ canvas{
 .toolBarbutton.active{
     background: #0078ff;
 }
+
+.join-screen{
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.75);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 3000;
+}
+
+.join-card{
+    background: #1f1f1f;
+    padding: 30px;
+    border-radius: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    width: 320px;
+}
+
+.join-card h2{
+    color: white;
+    text-align: center;
+}
+
+.join-card input,
+.join-card button{
+    padding: 12px;
+    border-radius: 10px;
+    border: none;
+}
+
+.join-card button{
+    background: #0078ff;
+    color: white;
+    cursor: pointer;
+}
+
+.chat{
+    position: fixed;
+    right: 20px;
+    bottom: 20px;
+    width: 300px;
+    height: 380px;
+    background: rgba(30,30,30,0.92);
+    border-radius: 16px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    z-index: 1000;
+}
+
+.chat-messages{
+    flex: 1;
+    padding: 12px;
+    overflow-y: auto;
+    color: white;
+    font-size: 14px;
+}
+
+.chat-form{
+    display:flex;
+    gap:8px;
+    padding: 10px;
+}
+
+.chat-form input{
+    flex: 1;
+    padding: 10px;
+    border-radius: 8px;
+    border: none;
+}
+
+.chat-form button{
+    padding: 10px 14px;
+    border: none;
+    border-radius: 8px;
+    background: #0078ff;
+    color: white;
+    cursor: pointer;
+}

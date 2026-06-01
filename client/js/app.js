@@ -20,6 +20,17 @@ const brushTool=document.getElementById("brushTool");
 const eraserTool=document.getElementById("eraserTool");
 const clearBoardButton=document.getElementById("clearBoard");
 
+const joinScreen=document.getElementById("joinScreen");
+const usernameInput=document.getElementById("usernameInput");
+const roomInput=document.getElementById("roominput");
+const joinRoomBtn=document.getElementById("joinRoomBtn");
+const chatForm=document.getElementById("chatForm");
+const chatInput=document.getElementById("chatInput");
+const chatMessages=document.getElementById("chatMessages");
+
+let username="";
+let roomId="";
+
 let currenTool="brush";
 brushTool.classList.add("active");
 
@@ -57,7 +68,7 @@ brushSize.addEventListener("input", (event)=>{
 
 clearBoardButton.addEventListener("click",()=>{
     clearCanvas();
-    socket.emit("clear-board");
+    socket.emit("clearBoard");
 });
 
 function draw(event){
@@ -138,3 +149,42 @@ function clearCanvas(){
         0,0,canvas.width,canvas.height
     );
 }
+
+joinRoomBtn.addEventListener("click",()=>{
+    username=usernameInput.value.trim();
+    roomId=roomInput.value.trim();
+
+    if(!username || !roomId) return;
+
+    socket.emit("join-room", {
+        username,
+        roomId
+    });
+    joinScreen.style.display="none";
+});
+
+chatForm.addEventListener("submit", (event)=>{
+    event.preventDefault();
+    const message=chatInput.value.trim();
+    
+    if(!message) return;
+
+    socket.emit("chat-message", message);
+
+    chatInput.value="";
+});
+
+socket.on("chat-message", (data)=>{
+    const messageElement=document.createElement("div");
+
+    messageElement.innerHTML=`<b>${data.username}: </b>${data.message}`;
+    chatMessages.appendChild(messageElement);
+
+    chatMessages.scrollTop=chatMessages.scrollHeight;
+});
+
+socket.on("user-joined", (data)=>{
+    const messageElement=document.createElement("div");
+    messageElement.innerHTML=`<i>${data.username} joined the room</i>`;
+    chatMessages.appendChild(messageElement);
+});
