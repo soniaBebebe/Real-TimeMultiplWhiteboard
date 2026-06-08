@@ -31,8 +31,8 @@ io.on("connection", (socket)=>{
     socket.on("end-draw", ()=>{
         socket.to(socket.data.roomId).emit("end-draw");
     });
-    socket.on("clearBoard", ()=>{
-        socket.to(socket.data.roomId).emit("clearBoard");
+    socket.on("clear-board", ()=>{
+        socket.to(socket.data.roomId).emit("clear-board");
     });
     socket.on("join-rom", (data)=>{
         socket.join(data.roomId);

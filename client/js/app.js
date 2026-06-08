@@ -22,7 +22,7 @@ const clearBoardButton=document.getElementById("clearBoard");
 
 const joinScreen=document.getElementById("joinScreen");
 const usernameInput=document.getElementById("usernameInput");
-const roomInput=document.getElementById("roominput");
+const roomInput=document.getElementById("roomInput");
 const joinRoomBtn=document.getElementById("joinRoomBtn");
 const chatForm=document.getElementById("chatForm");
 const chatInput=document.getElementById("chatInput");
@@ -34,7 +34,7 @@ let roomId="";
 let currenTool="brush";
 brushTool.classList.add("active");
 
-socket.on("clearBoard", ()=>{
+socket.on("clear-board", ()=>{
     clearCanvas();
 });
 
@@ -150,7 +150,7 @@ function clearCanvas(){
     );
 }
 
-joinRoomBtn.addEventListener("click",()=>{
+joinRoomBtn.addEventListener("click",(event)=>{
     event.preventDefault();
     username=usernameInput.value.trim();
     roomId=roomInput.value.trim();
