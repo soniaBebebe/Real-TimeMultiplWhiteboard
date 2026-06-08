@@ -151,6 +151,7 @@ function clearCanvas(){
 }
 
 joinRoomBtn.addEventListener("click",()=>{
+    event.preventDefault();
     username=usernameInput.value.trim();
     roomId=roomInput.value.trim();
 
