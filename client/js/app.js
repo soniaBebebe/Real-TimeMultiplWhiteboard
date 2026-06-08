@@ -209,7 +209,7 @@ socket.on("cursor-move", (data)=>{
             <div class="cursor-name">${data.username}</div>
         `;
         cursorsContainer.appendChild(cursor);
-        remoteCursors[data.socketId]=cursor;
+        removeCursors[data.socketId]=cursor;
     }
     const cursor=remoteCursors[data.socketId];
     cursor.style.left=`${data.x}px`;
@@ -220,5 +220,5 @@ socket.on("user-left", (socketId)=>{
     const cursor=remoteCursors[socketId];
     if(!cursor) return;
     cursor.remove();
-    delete remoteCursors[socketId];
+    delete removeCursors[socketId];
 });
