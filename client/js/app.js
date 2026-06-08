@@ -27,6 +27,8 @@ const joinRoomBtn=document.getElementById("joinRoomBtn");
 const chatForm=document.getElementById("chatForm");
 const chatInput=document.getElementById("chatInput");
 const chatMessages=document.getElementById("chatMessages");
+const cursorsContainer=document.getElementById("cursorsContainer");
+const removeCursors={};
 
 let username="";
 let roomId="";
@@ -68,7 +70,7 @@ brushSize.addEventListener("input", (event)=>{
 
 clearBoardButton.addEventListener("click",()=>{
     clearCanvas();
-    socket.emit("clearBoard");
+    socket.emit("clear-board");
 });
 
 function draw(event){
@@ -188,4 +190,35 @@ socket.on("user-joined", (data)=>{
     const messageElement=document.createElement("div");
     messageElement.innerHTML=`<i>${data.username} joined the room</i>`;
     chatMessages.appendChild(messageElement);
+});
+
+window.addEventListener("mousemove", (event)=>{
+    if (!roomId) return;
+    socket.emit("cursor-move",{
+        x:event.clientX,
+        y:event.clientY
+    });
+});
+socket.on("cursor-move", (data)=>{
+    if(!remoteCursors[data.socketId]){
+        const cursor=document.createElement("div");
+        cursor.className="cursor";
+
+        cursor.innerHTML=`
+            <div class="cursor-dot"></div>
+            <div class="cursor-name">${data.username}</div>
+        `;
+        cursorsContainer.appendChild(cursor);
+        remoteCursors[data.socketId]=cursor;
+    }
+    const cursor=remoteCursors[data.socketId];
+    cursor.style.left=`${data.x}px`;
+    cursor.style.top=`${data.y}px`;
+})
+
+socket.on("user-left", (socketId)=>{
+    const cursor=remoteCursors[socketId];
+    if(!cursor) return;
+    cursor.remove();
+    delete remoteCursors[socketId];
 });

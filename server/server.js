@@ -18,7 +18,9 @@ const io=new Server(server,{
 io.on("connection", (socket)=>{
     console.log("User connected:", socket.id);
 
-    socket.on("disconnect", () => { console.log("User disconnected:", socket.id); });
+    socket.on("disconnect", () => {
+        socket.to(socket.data.roomId).emit("ser-left", socket.id)
+        console.log("User disconnected:", socket.id); });
 
     socket.on("start-draw", (data)=>{
         socket.to(socket.data.roomId).emit("start-draw", data);
@@ -34,7 +36,7 @@ io.on("connection", (socket)=>{
     socket.on("clear-board", ()=>{
         socket.to(socket.data.roomId).emit("clear-board");
     });
-    socket.on("join-rom", (data)=>{
+    socket.on("join-room", (data)=>{
         socket.join(data.roomId);
         socket.data.username=data.username;
         socket.data.roomId=data.roomId;
@@ -48,6 +50,14 @@ io.on("connection", (socket)=>{
             message
         };
         io.to(socket.data.roomId).emit("chat-message", data);
+    });
+    socket.on("cursor-move", (data)=>{
+        socket.to(socket.data.roomId).emit("cursor-move", {
+            socketId:socket.id,
+            username:socket.data.username,
+            x:data.x,
+            y:data.y
+        });
     });
 })
 const PORT = 3000;
