@@ -33,6 +33,9 @@ const removeCursors={};
 let username="";
 let roomId="";
 
+let boardHistory=[];
+
+
 let currenTool="brush";
 brushTool.classList.add("active");
 
@@ -97,6 +100,14 @@ function draw(event){
         brushSize:currentBrushSize
     });
 
+    boardHistory.push({
+        x,
+        y,
+        color: currenTool==="eraser"?"white": currentColor,
+        brushSize:currentBrushSize
+    });
+    saveBoard();
+
     ctx.beginPath();
     ctx.moveTo(x,y);
 }
@@ -150,6 +161,10 @@ function clearCanvas(){
     ctx.fillRect(
         0,0,canvas.width,canvas.height
     );
+    if(roomId){
+        localStorage.removeItem(`whiteboard-${roomId}`);
+        boardHistory=[];
+    }
 }
 
 joinRoomBtn.addEventListener("click",(event)=>{
@@ -164,6 +179,7 @@ joinRoomBtn.addEventListener("click",(event)=>{
         roomId
     });
     joinScreen.style.display="none";
+    loadBoard();
 });
 
 chatForm.addEventListener("submit", (event)=>{
@@ -222,3 +238,33 @@ socket.on("user-left", (socketId)=>{
     cursor.remove();
     delete removeCursors[socketId];
 });
+
+function saveBoard(){
+    if(!roomId) return;
+
+    localStorage.setItem(
+        `whiteboard-${roomId}`,
+        JSON.stringify(boardHistory)
+    );
+}
+
+function loadBoard(){
+    const savedBoard=localStorage.getItem(`Whiteboard-${roomId}`);
+
+    if (!savedBoard) return;
+
+    boardHistory=JSON.parse(savedBoard);
+
+    ctx.beginPath();
+
+    boardHistory.forEach(point=>{
+        ctx.strokeStyle=point.color;
+        ctx.lineWidth=point.brushSize;
+
+        ctx.lineTo(point.x, point.y);
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.moveTo(point.x, point.y);
+    });
+}
