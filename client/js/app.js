@@ -200,7 +200,7 @@ window.addEventListener("mousemove", (event)=>{
     });
 });
 socket.on("cursor-move", (data)=>{
-    if(!remoteCursors[data.socketId]){
+    if(!removeCursors[data.socketId]){
         const cursor=document.createElement("div");
         cursor.className="cursor";
 
@@ -211,13 +211,13 @@ socket.on("cursor-move", (data)=>{
         cursorsContainer.appendChild(cursor);
         removeCursors[data.socketId]=cursor;
     }
-    const cursor=remoteCursors[data.socketId];
+    const cursor=removeCursors[data.socketId];
     cursor.style.left=`${data.x}px`;
     cursor.style.top=`${data.y}px`;
 })
 
 socket.on("user-left", (socketId)=>{
-    const cursor=remoteCursors[socketId];
+    const cursor=removeCursors[socketId];
     if(!cursor) return;
     cursor.remove();
     delete removeCursors[socketId];
