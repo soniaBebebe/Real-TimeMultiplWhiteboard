@@ -249,7 +249,7 @@ function saveBoard(){
 }
 
 function loadBoard(){
-    const savedBoard=localStorage.getItem(`Whiteboard-${roomId}`);
+    const savedBoard=localStorage.getItem(`whiteboard-${roomId}`);
 
     if (!savedBoard) return;
 
