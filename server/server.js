@@ -19,7 +19,12 @@ io.on("connection", (socket)=>{
     console.log("User connected:", socket.id);
 
     socket.on("disconnect", () => {
-        socket.to(socket.data.roomId).emit("user-left", socket.id)
+        socket.to(socket.data.roomId).emit("user-left", socket.id);
+
+        socket.to(socket.data.roomId).emit("user-left-chat", {
+            username: socket.data.username
+        });
+
         console.log("User disconnected:", socket.id); });
 
     socket.on("start-draw", (data)=>{

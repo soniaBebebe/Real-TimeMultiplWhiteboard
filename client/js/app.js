@@ -210,7 +210,7 @@ socket.on("chat-message", (data)=>{
             </span>
         </div>
         
-        <div class="chat bubble">
+        <div class="chat-bubble">
             ${data.message}
         </div>
     `;
@@ -225,6 +225,16 @@ socket.on("user-joined", (data)=>{
     msg.className="system-message";
     msg.textContent=
         `${data.username} joined the room`
+    chatMessages.appendChild(msg);
+    chatMessages.scrollTop=chatMessages.scrollHeight;
+});
+
+socket.on("user-left-chat", (data)=>{
+    const msg = document.createElement("div");
+
+    msg.className="system-message";
+    msg.textContent=`${data.username} left the room`;
+
     chatMessages.appendChild(msg);
     chatMessages.scrollTop=chatMessages.scrollHeight;
 });

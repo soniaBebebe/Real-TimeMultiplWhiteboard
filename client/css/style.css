@@ -120,13 +120,20 @@ canvas{
     text-align:right;
 }
 
+.chat-messages{
+    flex: 1;
+    padding: 12px;
+    overflow-y: auto;
+    color: white;
+}
+
 .chat-author{
     color:#aaa;
     font-size: 11px;
     margin-bottom: 2px;
 }
 
-.chat.bubble{
+.chat-bubble{
     display: inline-block;
     background: #333;
     color:white;
@@ -135,7 +142,7 @@ canvas{
     max-width: 220px;
 }
 
-.chat-message.mine .chat.bubble{
+.chat-message.mine .chat-bubble{
     background: #0078ff;
 }
 
