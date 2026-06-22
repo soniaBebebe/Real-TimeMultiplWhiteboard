@@ -47,7 +47,8 @@ io.on("connection", (socket)=>{
     socket.on("chat-message", (message)=>{
         const data={
             username: socket.data.username,
-            message
+            message,
+            time: new Date().toLocaleTimeString()
         };
         io.to(socket.data.roomId).emit("chat-message", data);
     });

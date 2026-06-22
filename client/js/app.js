@@ -196,16 +196,37 @@ chatForm.addEventListener("submit", (event)=>{
 socket.on("chat-message", (data)=>{
     const messageElement=document.createElement("div");
 
-    messageElement.innerHTML=`<b>${data.username}: </b>${data.message}`;
+    const isMine=data.username===username;
+
+    messageElement.slassName=isMine
+        ?"chat-message mine"
+        :"chat message";
+    
+    messageElement.innerHTML=`
+        <div class="chat-author">
+            ${data.username}
+            <span class="chat-time">
+                ${data.time}
+            </span>
+        </div>
+        
+        <div class="chat-bubble">
+            ${data.message}
+        </div>
+    `;
+
     chatMessages.appendChild(messageElement);
 
     chatMessages.scrollTop=chatMessages.scrollHeight;
 });
 
 socket.on("user-joined", (data)=>{
-    const messageElement=document.createElement("div");
-    messageElement.innerHTML=`<i>${data.username} joined the room</i>`;
-    chatMessages.appendChild(messageElement);
+    const msg=document.createElement("div");
+    msg.className="system-message";
+    msg.textContent=
+        `${data.username} joined the room`
+    chatMessages.appendChild(msg);
+    chatMessages.scrollTop=chatMessages.scrollHeight;
 });
 
 window.addEventListener("mousemove", (event)=>{

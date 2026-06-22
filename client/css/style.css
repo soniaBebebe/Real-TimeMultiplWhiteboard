@@ -112,12 +112,37 @@ canvas{
     z-index: 1000;
 }
 
-.chat-messages{
-    flex: 1;
-    padding: 12px;
-    overflow-y: auto;
-    color: white;
-    font-size: 14px;
+.chat-message{
+    margin-bottom:10px;
+}
+
+.chat-message.mine{
+    text-align:right;
+}
+
+.chat-author{
+    color:#aaa;
+    font-size: 11px;
+    margin-bottom: 2px;
+}
+
+.chat.bubble{
+    display: inline-block;
+    background: #333;
+    color:white;
+    padding: 8px 12px;
+    border-radius: 12px;
+    max-width: 220px;
+}
+
+.chat-message.mine .chat-bubble{
+    background: #0078ff;
+}
+
+.chat-time{
+    color: grey;
+    font-size: 10px;
+    margin-left: 5px;
 }
 
 .chat-form{
