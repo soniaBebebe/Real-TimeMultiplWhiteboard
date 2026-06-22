@@ -56,7 +56,7 @@ canvas{
 .toolBar button:hover{
     background: #444;
 }
-.toolBarbutton.active{
+.toolBar button.active{
     background: #0078ff;
 }
 
@@ -135,7 +135,7 @@ canvas{
     max-width: 220px;
 }
 
-.chat-message.mine .chat-bubble{
+.chat-message.mine .chat.bubble{
     background: #0078ff;
 }
 

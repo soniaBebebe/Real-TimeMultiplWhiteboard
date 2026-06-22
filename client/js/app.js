@@ -198,9 +198,9 @@ socket.on("chat-message", (data)=>{
 
     const isMine=data.username===username;
 
-    messageElement.slassName=isMine
+    messageElement.className=isMine
         ?"chat-message mine"
-        :"chat message";
+        :"chat-message";
     
     messageElement.innerHTML=`
         <div class="chat-author">
@@ -210,7 +210,7 @@ socket.on("chat-message", (data)=>{
             </span>
         </div>
         
-        <div class="chat-bubble">
+        <div class="chat bubble">
             ${data.message}
         </div>
     `;
