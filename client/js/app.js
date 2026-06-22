@@ -35,6 +35,9 @@ let roomId="";
 
 let boardHistory=[];
 
+let usersList=document.getElementById("usersList");
+
+let onlineUsers=[];
 
 let currenTool="brush";
 brushTool.classList.add("active");
@@ -178,6 +181,8 @@ joinRoomBtn.addEventListener("click",(event)=>{
         username,
         roomId
     });
+    onlineUsers.push(username);
+    renderUsers();
     joinScreen.style.display="none";
     loadBoard();
 });
@@ -221,6 +226,10 @@ socket.on("chat-message", (data)=>{
 });
 
 socket.on("user-joined", (data)=>{
+    if(!onlineUsers.includes(data.username)){
+        onlineUsers.push(data.username);
+        renderUsers();
+    }
     const msg=document.createElement("div");
     msg.className="system-message";
     msg.textContent=
@@ -230,6 +239,8 @@ socket.on("user-joined", (data)=>{
 });
 
 socket.on("user-left-chat", (data)=>{
+    onlineUsers=onlineUsers.filter(user=> user !==data.username);
+    renderUsers();
     const msg = document.createElement("div");
 
     msg.className="system-message";
@@ -285,6 +296,9 @@ function loadBoard(){
     if (!savedBoard) return;
 
     boardHistory=JSON.parse(savedBoard);
+    
+    onlineUsers.push(username);
+    renderUsers();
 
     ctx.beginPath();
 
@@ -298,4 +312,17 @@ function loadBoard(){
         ctx.beginPath();
         ctx.moveTo(point.x, point.y);
     });
+}
+
+function renderUsers(){
+    usersList.innerHTML="";
+    onlineUsers.forEach(user=>{
+        const item=document.createElement("div");
+        item.className="user-item";
+        item.innerHTML=`
+            <div class="user-dot"></div>
+            <span>${user}</span>
+            `;
+            usersList.appendChild(item);
+    })
 }

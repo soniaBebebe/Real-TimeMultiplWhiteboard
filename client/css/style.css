@@ -201,3 +201,40 @@ canvas{
     pointer-events: none;
     z-index: 9999;
 }
+
+.users-panel{
+    position: fixed;
+    top: 100px;
+    right: 20px;
+    width: 220px;
+    background: rgba(30,30,30,0.92);
+    border-radius: 16px;
+    overflow: hidden;
+    z-index: 1000;
+}
+
+.users-header{
+    padding: 12px;
+    background: #0078ff;
+    color: white;
+    font-weight: bold;
+}
+
+#usersList{
+    padding: 10px;
+}
+
+.user-item{
+    display:flex;
+    align-items: center;
+    gap: 10px;
+    color: white;
+    margin-bottom: 10px;
+}
+
+.user-dot{
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: limegreen;
+}
