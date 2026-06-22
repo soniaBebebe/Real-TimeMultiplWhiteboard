@@ -296,10 +296,6 @@ function loadBoard(){
     if (!savedBoard) return;
 
     boardHistory=JSON.parse(savedBoard);
-    
-    onlineUsers.push(username);
-    renderUsers();
-
     ctx.beginPath();
 
     boardHistory.forEach(point=>{
