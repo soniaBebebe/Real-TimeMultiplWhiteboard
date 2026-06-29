@@ -19,6 +19,8 @@ let currentBrushSize=5;
 const brushTool=document.getElementById("brushTool");
 const eraserTool=document.getElementById("eraserTool");
 const clearBoardButton=document.getElementById("clearBoard");
+const undoBtn=document.getElementById("undoBtn");
+const redoBtn=document.getElementById("redoBtn");
 
 const joinScreen=document.getElementById("joinScreen");
 const usernameInput=document.getElementById("usernameInput");
@@ -38,6 +40,8 @@ let boardHistory=[];
 let usersList=document.getElementById("usersList");
 
 let onlineUsers=[];
+
+let redoHistory=[];
 
 let currenTool="brush";
 brushTool.classList.add("active");
@@ -79,6 +83,14 @@ clearBoardButton.addEventListener("click",()=>{
     socket.emit("clear-board");
 });
 
+undoBtn.addEventListener("click", ()=>{
+    undo();
+});
+
+redoBtn.addEventListener("click",()=>{
+    redo();
+});
+
 function draw(event){
     if (!isDrawing) return;
 
@@ -111,6 +123,8 @@ function draw(event){
     });
     saveBoard();
 
+    redoHistory=[];
+
     ctx.beginPath();
     ctx.moveTo(x,y);
 }
@@ -132,13 +146,6 @@ socket.on("draw", (data)=>{
 socket.on("end-draw", ()=>{
     ctx.beginPath();
 });
-
-function drawRemote(data){
-    ctx.lineTo(data.x, data.y);
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.moveTo(data.x, data.y);
-}
 
 function startDrawing(event){
     isDrawing=true;
@@ -321,4 +328,53 @@ function renderUsers(){
             `;
             usersList.appendChild(item);
     })
+}
+
+function redrawBoard(){
+    clearOnlyCanvas();
+
+    ctx.beginPath();
+
+    boardHistory.forEach(point=>{
+        ctx.strokeStyle=point.color;
+        ctx.lineWidth=point.brushSize;
+
+        ctx.lineTo(point.x, point.y);
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.moveTo(point.x, point.y);
+    });
+}
+
+function clearOnlyCanvas(){
+    ctx.clearRect(0,0, canvas.width, canvas.height);
+
+    ctx.fillStyle="white";
+    ctx.fillRect(0,0, canvas.width, canvas.height);
+}
+
+function undo(){
+    if(boardHistory.length===0) return;
+
+    const lastPoint=boardHistory.pop();
+
+    redoHistory.push(lastPoint);
+
+    redrawBoard();
+    saveBoard();
+
+    socket.emit("sync-board", boardHistory);
+}
+
+function redo(){
+    if(redoHistory.length===0) return;
+    const restoredPoint=redoHistory.pop();
+
+    boardHistory.push(restoredPoint);
+
+    redrawBoard();
+    saveBoard();
+
+    socket.emit("sync-board", boardHistory);
 }

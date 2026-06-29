@@ -65,6 +65,16 @@ io.on("connection", (socket)=>{
             y:data.y
         });
     });
+    socket.on("sync-board", (boardHistory)=>{
+        socket.to(socket.data.roomId).emit("sync-board", boardHistory);
+    });
+    socket.on("sync-board", (newHistory)=>{
+        boardHistory=newHistory;
+        redoHistory=[];
+
+        redrawBoard();
+        saveBoard();
+    });
 })
 const PORT = 3000;
 server.listen(PORT, ()=> {console.log(`Server running on port ${PORT}`);});
