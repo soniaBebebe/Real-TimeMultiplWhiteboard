@@ -43,12 +43,22 @@ let onlineUsers=[];
 
 let redoHistory=[];
 
+let currentStroke=null;
+
 let currenTool="brush";
 brushTool.classList.add("active");
 
 socket.on("clear-board", ()=>{
     clearCanvas();
 });
+
+socket.on("sync-board", (newHistory)=>{
+        boardHistory=newHistory;
+        redoHistory=[];
+
+        redrawBoard();
+        saveBoard();
+    });
 
 brushTool.addEventListener("click", ()=>{
     currenTool="brush";
@@ -96,37 +106,36 @@ function draw(event){
 
     const x=event.clientX;
     const y=event.clientY;
-
-    if(currenTool==="eraser"){
-        ctx.strokeStyle="white";
-    } else{
-        ctx.strokeStyle=currentColor;
-    }
+    const color=currenTool==="eraser"
+        ?"white"
+        :currentColor;
+    
+    ctx.strokeStyle=color;
     ctx.lineWidth=currentBrushSize;
     ctx.lineTo(x,y);
     ctx.stroke();
 
+    currentStroke.points/push({x,y});
+
     socket.emit("draw",{
         x,
         y,
-        color:currenTool==="eraser"
-        ?"white"
-        :currentColor,
+        color,
         brushSize:currentBrushSize
     });
 
-    boardHistory.push({
-        x,
-        y,
-        color: currenTool==="eraser"?"white": currentColor,
-        brushSize:currentBrushSize
-    });
-    saveBoard();
+    // boardHistory.push({
+    //     x,
+    //     y,
+    //     color: currenTool==="eraser"?"white": currentColor,
+    //     brushSize:currentBrushSize
+    // });
+    // saveBoard();
 
-    redoHistory=[];
+    // redoHistory=[];
 
-    ctx.beginPath();
-    ctx.moveTo(x,y);
+    // ctx.beginPath();
+    // ctx.moveTo(x,y);
 }
 
 socket.on("start-draw", (data)=>{
@@ -152,13 +161,32 @@ function startDrawing(event){
 
     const x=event.clientX;
     const y=event.clientY;
+    const color=currenTool==="eraser"
+        ?"white"
+        : currentColor;
+    currentStroke={
+        color=color,
+        brushSize: currentBrushSize,
+        points:[
+            {x,y}
+        ]
+    };
     ctx.beginPath();
     ctx.moveTo(x,y);
-    socket.emit("start-draw", {x,y});
+    socket.emit("start-draw", {x,y,color, currentBrushSize});
 }
 
 function stopDrawing(){
+    if (!isDrawing) return;
     isDrawing=false;
+
+    if(currentStroke){
+        boardHistory.push(currentStroke);
+        saveBoard();
+        redoHistory=[];
+        currentStroke=null;
+    }
+
     ctx.beginPath();
     socket.emit("end-draw");
 }
@@ -303,18 +331,20 @@ function loadBoard(){
     if (!savedBoard) return;
 
     boardHistory=JSON.parse(savedBoard);
-    ctx.beginPath();
+    // ctx.beginPath();
 
-    boardHistory.forEach(point=>{
-        ctx.strokeStyle=point.color;
-        ctx.lineWidth=point.brushSize;
+    // boardHistory.forEach(point=>{
+    //     ctx.strokeStyle=point.color;
+    //     ctx.lineWidth=point.brushSize;
 
-        ctx.lineTo(point.x, point.y);
-        ctx.stroke();
+    //     ctx.lineTo(point.x, point.y);
+    //     ctx.stroke();
 
-        ctx.beginPath();
-        ctx.moveTo(point.x, point.y);
-    });
+    //     ctx.beginPath();
+    //     ctx.moveTo(point.x, point.y);
+    // });
+    redrawBoard();
+
 }
 
 function renderUsers(){
@@ -333,20 +363,23 @@ function renderUsers(){
 function redrawBoard(){
     clearOnlyCanvas();
 
-    ctx.beginPath();
-
     boardHistory.forEach(point=>{
+        if(!point.points.length) return;
+         ctx.beginPath();
         ctx.strokeStyle=point.color;
         ctx.lineWidth=point.brushSize;
 
-        ctx.lineTo(point.x, point.y);
-        ctx.stroke();
+        ctx.moveTo(point.points[0].x,point.points[0].y);
 
+        point.points.forEach(point=>{
+            ctx.lineTo(point.x, point.y);
+            ctx.stroke();
+        });
         ctx.beginPath();
-        ctx.moveTo(point.x, point.y);
     });
+    
 }
-
+// zamenit function loadBoard
 function clearOnlyCanvas(){
     ctx.clearRect(0,0, canvas.width, canvas.height);
 
