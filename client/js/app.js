@@ -165,7 +165,7 @@ function startDrawing(event){
         ?"white"
         : currentColor;
     currentStroke={
-        color=color,
+        color: color,
         brushSize: currentBrushSize,
         points:[
             {x,y}
