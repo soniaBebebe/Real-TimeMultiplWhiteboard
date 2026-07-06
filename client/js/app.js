@@ -112,10 +112,11 @@ function draw(event){
     
     ctx.strokeStyle=color;
     ctx.lineWidth=currentBrushSize;
-    ctx.lineTo(x,y);
-    ctx.stroke();
+    // ctx.lineTo(x,y);
+    // ctx.stroke();
+    currentStroke.points.push({x,y});
 
-    currentStroke.points/push({x,y});
+    currentStroke.points.push({x,y});
 
     socket.emit("draw",{
         x,
@@ -134,8 +135,8 @@ function draw(event){
 
     // redoHistory=[];
 
-    // ctx.beginPath();
-    // ctx.moveTo(x,y);
+    ctx.beginPath();
+    ctx.moveTo(x,y);
 }
 
 socket.on("start-draw", (data)=>{
@@ -173,7 +174,7 @@ function startDrawing(event){
     };
     ctx.beginPath();
     ctx.moveTo(x,y);
-    socket.emit("start-draw", {x,y,color, currentBrushSize});
+    socket.emit("start-draw", {x,y,color, brusSize: currentBrushSize});
 }
 
 function stopDrawing(){
@@ -363,18 +364,19 @@ function renderUsers(){
 function redrawBoard(){
     clearOnlyCanvas();
 
-    boardHistory.forEach(point=>{
-        if(!point.points.length) return;
+    boardHistory.forEach(stroke=>{
+        if(!stroke.points.length) return;
          ctx.beginPath();
-        ctx.strokeStyle=point.color;
-        ctx.lineWidth=point.brushSize;
+        ctx.strokeStyle=stroke.color;
+        ctx.lineWidth=stroke.brushSize;
 
-        ctx.moveTo(point.points[0].x,point.points[0].y);
+        ctx.moveTo(stroke.points[0].x,stroke.points[0].y);
 
-        point.points.forEach(point=>{
+        stroke.points.forEach(point=>{
             ctx.lineTo(point.x, point.y);
             ctx.stroke();
         });
+        ctx.stroke();
         ctx.beginPath();
     });
     
