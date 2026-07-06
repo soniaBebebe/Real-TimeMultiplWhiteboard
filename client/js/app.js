@@ -21,6 +21,10 @@ const eraserTool=document.getElementById("eraserTool");
 const clearBoardButton=document.getElementById("clearBoard");
 const undoBtn=document.getElementById("undoBtn");
 const redoBtn=document.getElementById("redoBtn");
+const rectTool=document.getElementById("rectTool");
+const lineTool=document.getElementById("lineTool");
+const circleTool=document.getElementById("circleTool");
+const arrowTool=document.getElementById("arrowTool");
 
 const joinScreen=document.getElementById("joinScreen");
 const usernameInput=document.getElementById("usernameInput");
@@ -34,6 +38,9 @@ const removeCursors={};
 
 let username="";
 let roomId="";
+
+let starrX=0;
+let startY=0;
 
 let boardHistory=[];
 
@@ -411,4 +418,21 @@ function redo(){
     saveBoard();
 
     socket.emit("sync-board", boardHistory);
+}
+function setTool(tool){
+    currentTool=tool;
+
+    brushTool.classList.remove("active");
+    eraserTool.classList.remove("active");
+    rectTool.classList.remove("active");
+    lineTool.classList.remove("active");
+    circleTool.classList.remove("active");
+    arrowTool.classList.remove("active");
+
+    if (tool==="brush") brushTool.classList.add("active");
+    if (tool==="eraser") eraserTool.classList.add("active");
+    if (tool==="rect") rectTool.classList.add("active");
+    if (tool==="line") lineTool.classList.add("active");
+    if (tool==="circle") circleTool.classList.add("active");
+    if (tool==="arrow") arrowTool.classList.add("active");
 }
