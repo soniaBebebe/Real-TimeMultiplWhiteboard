@@ -112,11 +112,10 @@ function draw(event){
     
     ctx.strokeStyle=color;
     ctx.lineWidth=currentBrushSize;
-    // ctx.lineTo(x,y);
-    // ctx.stroke();
+    ctx.lineTo(x,y);
+    ctx.stroke();
     currentStroke.points.push({x,y});
 
-    currentStroke.points.push({x,y});
 
     socket.emit("draw",{
         x,
@@ -174,7 +173,7 @@ function startDrawing(event){
     };
     ctx.beginPath();
     ctx.moveTo(x,y);
-    socket.emit("start-draw", {x,y,color, brusSize: currentBrushSize});
+    socket.emit("start-draw", {x,y,color, brushSize: currentBrushSize});
 }
 
 function stopDrawing(){
@@ -365,17 +364,17 @@ function redrawBoard(){
     clearOnlyCanvas();
 
     boardHistory.forEach(stroke=>{
-        if(!stroke.points.length) return;
+        if(!stroke.points || stroke.points.length<2) return;
          ctx.beginPath();
         ctx.strokeStyle=stroke.color;
         ctx.lineWidth=stroke.brushSize;
-
+        ctx.lineCap="round";
+        ctx.lineJoin="round";
         ctx.moveTo(stroke.points[0].x,stroke.points[0].y);
 
-        stroke.points.forEach(point=>{
-            ctx.lineTo(point.x, point.y);
-            ctx.stroke();
-        });
+        for (let i=1; i<stroke.points.length; i++){
+            ctx.lineTo(stroke.points[i].x, stroke.points[i].y);
+        };
         ctx.stroke();
         ctx.beginPath();
     });
