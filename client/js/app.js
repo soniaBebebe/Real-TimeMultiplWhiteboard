@@ -39,8 +39,8 @@ const removeCursors={};
 let username="";
 let roomId="";
 
-let starrX=0;
-let startY=0;
+// let startX=0;
+// let startY=0;
 
 let boardHistory=[];
 
@@ -52,7 +52,7 @@ let redoHistory=[];
 
 let currentStroke=null;
 
-let currenTool="brush";
+let currentTool="brush";
 brushTool.classList.add("active");
 
 socket.on("clear-board", ()=>{
@@ -64,17 +64,28 @@ socket.on("sync-board", (newHistory)=>{
         redoHistory=[];
 
         redrawBoard();
-        saveBoard();
+        // saveBoard();
     });
 
+socket.on("stroke-add", (stroke)=>{
+    boardHistory.push(stroke);
+});
+
+socket.on("room-users", (users)=>{
+    onlineUsers=users;
+    renderUsers();
+});
+
+window.addEventListener("canvas-resized", redrawBoard);
+
 brushTool.addEventListener("click", ()=>{
-    currenTool="brush";
+    currentTool="brush";
     brushTool.classList.add("active");
     eraserTool.classList.remove("active");
 });
 
 eraserTool.addEventListener("click", ()=>{
-    currenTool="eraser";
+    currentTool="eraser";
     eraserTool.classList.add("active");
     brushTool.classList.remove("active");
 });
@@ -113,7 +124,7 @@ function draw(event){
 
     const x=event.clientX;
     const y=event.clientY;
-    const color=currenTool==="eraser"
+    const color=currentTool==="eraser"
         ?"white"
         :currentColor;
     
@@ -168,7 +179,7 @@ function startDrawing(event){
 
     const x=event.clientX;
     const y=event.clientY;
-    const color=currenTool==="eraser"
+    const color=currentTool==="eraser"
         ?"white"
         : currentColor;
     currentStroke={
@@ -189,8 +200,8 @@ function stopDrawing(){
 
     if(currentStroke){
         boardHistory.push(currentStroke);
-        saveBoard();
         redoHistory=[];
+        socket.emit("stroke-end", currentStroke);
         currentStroke=null;
     }
 
@@ -206,10 +217,12 @@ function clearCanvas(){
     ctx.fillRect(
         0,0,canvas.width,canvas.height
     );
-    if(roomId){
-        localStorage.removeItem(`whiteboard-${roomId}`);
-        boardHistory=[];
-    }
+    // if(roomId){
+    //     localStorage.removeItem(`whiteboard-${roomId}`);
+    //     boardHistory=[];
+    // }
+    boardHistory=[];
+    redoHistory=[];
 }
 
 joinRoomBtn.addEventListener("click",(event)=>{
@@ -223,10 +236,7 @@ joinRoomBtn.addEventListener("click",(event)=>{
         username,
         roomId
     });
-    onlineUsers.push(username);
-    renderUsers();
     joinScreen.style.display="none";
-    loadBoard();
 });
 
 chatForm.addEventListener("submit", (event)=>{
@@ -403,7 +413,6 @@ function undo(){
     redoHistory.push(lastPoint);
 
     redrawBoard();
-    saveBoard();
 
     socket.emit("sync-board", boardHistory);
 }
@@ -415,7 +424,6 @@ function redo(){
     boardHistory.push(restoredPoint);
 
     redrawBoard();
-    saveBoard();
 
     socket.emit("sync-board", boardHistory);
 }
