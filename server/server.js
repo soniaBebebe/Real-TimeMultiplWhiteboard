@@ -97,6 +97,9 @@ io.on("connection", (socket)=>{
         socket.to(socket.data.roomId).emit("sync-board", boardHistory);
     });
     
+    socket.on("shape-preview", (data) =>{
+        socket.to(socket.data.roomId).emit("shape-preview", data);
+    });
 })
 const PORT = 3000;
 server.listen(PORT, ()=> {console.log(`Server running on port ${PORT}`);});

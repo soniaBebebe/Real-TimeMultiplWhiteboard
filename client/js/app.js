@@ -51,6 +51,7 @@ let onlineUsers=[];
 let redoHistory=[];
 
 let currentStroke=null;
+let shapeStart=null;
 
 let currentTool="brush";
 brushTool.classList.add("active");
@@ -89,6 +90,19 @@ eraserTool.addEventListener("click", ()=>{
     eraserTool.classList.add("active");
     brushTool.classList.remove("active");
 });
+
+const shapeTools=["rect", "line", "circle", "arrow"];
+
+function isShapeTool(){
+    return shapeTools.includes(currentTool);
+}
+
+brushTool.addEventListener("click", ()=>setTool("brush"));
+eraserTool.addEventListener("click", ()=>setTool("eraser"));
+rectTool.addEventListener("click", ()=>setTool("rect"));
+lineTool.addEventListener("click", ()=>setTool("line"));
+circleTool.addEventListener("click", ()=>setTool("circle"));
+arrowTool.addEventListener("click", ()=>setTool("arrow"));
 
 canvas.addEventListener("mousedown", startDrawing);
 
@@ -179,6 +193,13 @@ function startDrawing(event){
 
     const x=event.clientX;
     const y=event.clientY;
+
+    if(isShapeTool()){
+        shapeStart={x,y};
+        return;
+    }
+    //zakonchili zdes'
+
     const color=currentTool==="eraser"
         ?"white"
         : currentColor;
