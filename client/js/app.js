@@ -145,7 +145,7 @@ function draw(event){
     const x=event.clientX;
     const y=event.clientY;
 
-    if(isShapeTool){
+    if(isShapeTool()){
         const shape={
             type:currentTool,
             color:currentColor,
@@ -155,7 +155,7 @@ function draw(event){
         };
         redrawBoard();
         drawShape(shape);
-        socket.emit("Shape-preview", shape);
+        socket.emit("shape-preview", shape);
         return
     }
 
@@ -443,7 +443,7 @@ function drawShape(shape){
     const{type,color,brushSize, start,end}=shape;
     ctx.beginPath();
     ctx.strokeStyle=color;
-    ctx.fillstyle=color;
+    ctx.fillStyle=color;
     ctx.lineWidth=brushSize;
     ctx.lineCap="round";
     ctx.lineJoin="round";
@@ -480,7 +480,7 @@ function drawArrow(start,end,color,brushSize){
     ctx.beginPath();
     ctx.moveTo(end.x, end.y);
     ctx.lineTo(end.x-headLength*Math.cos(angle-Math.PI/6), end.y-headLength*Math.sin(angle-Math.PI/6));
-    ctx.lineTo(end.x-headLength*Math.cos(angle-Math.PI/6), end.y-headLength*Math.sin(angle-Math.PI/6));
+    ctx.lineTo(end.x-headLength*Math.cos(angle+Math.PI/6), end.y-headLength*Math.sin(angle+Math.PI/6));
     ctx.closePath();
     ctx.fillStyle=color;
     ctx.fill();
