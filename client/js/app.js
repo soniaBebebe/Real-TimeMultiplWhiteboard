@@ -70,11 +70,17 @@ socket.on("sync-board", (newHistory)=>{
 
 socket.on("stroke-add", (stroke)=>{
     boardHistory.push(stroke);
+    redrawBoard();
 });
 
 socket.on("room-users", (users)=>{
     onlineUsers=users;
     renderUsers();
+});
+
+socket.on("shape-preview", (shape)=>{
+    redrawBoard();
+    drawShape(shape);
 });
 
 window.addEventListener("canvas-resized", redrawBoard);
@@ -138,6 +144,21 @@ function draw(event){
 
     const x=event.clientX;
     const y=event.clientY;
+
+    if(isShapeTool){
+        const shape={
+            type:currentTool,
+            color:currentColor,
+            brushSize:currentBrushSize,
+            start:shapeStart,
+            end:{x,y}
+        };
+        redrawBoard();
+        drawShape(shape);
+        socket.emit("Shape-preview", shape);
+        return
+    }
+
     const color=currentTool==="eraser"
         ?"white"
         :currentColor;
@@ -204,6 +225,7 @@ function startDrawing(event){
         ?"white"
         : currentColor;
     currentStroke={
+        type:"freehand",
         color: color,
         brushSize: currentBrushSize,
         points:[
@@ -215,9 +237,28 @@ function startDrawing(event){
     socket.emit("start-draw", {x,y,color, brushSize: currentBrushSize});
 }
 
-function stopDrawing(){
+function stopDrawing(event){
     if (!isDrawing) return;
     isDrawing=false;
+
+    if(isShapeTool()){
+        if(shapeStart){
+            const shape={
+                type:currentTool,
+                color:currentColor,
+                brushSize:currentBrushSize,
+                start:shapeStart,
+                end:{x:event.clientX, y:event.clientY}
+            };
+            boardHistory.push(shape);
+            redoHistory=[];
+            redrawBoard();
+            socket.emit("stroke-end", shape);
+            shapeStart=null;
+        }
+        socket.emit("end-draw");
+        return;
+    }
 
     if(currentStroke){
         boardHistory.push(currentStroke);
@@ -398,20 +439,72 @@ function renderUsers(){
     })
 }
 
+function drawShape(shape){
+    const{type,color,brushSize, start,end}=shape;
+    ctx.beginPath();
+    ctx.strokeStyle=color;
+    ctx.fillstyle=color;
+    ctx.lineWidth=brushSize;
+    ctx.lineCap="round";
+    ctx.lineJoin="round";
+
+    if(type==="rect"){
+        ctx.strokeRect(start.x, start.y, end.x-start.x, end.y-start.y);
+        return;
+    }
+    if(type==="line"){
+        ctx.moveTo(start.x, start.y);
+        ctx.lineTo(end.x, end.y);
+        ctx.stroke();
+        return;
+    }
+    if(type==="circle"){
+        const radius=Math.hypot(end.x-start.x, end.y-start.y);
+        ctx.arc(start.x, start.y, radius, 0, Math.PI*2);
+        ctx.stroke();
+        return;
+    }
+    if(type==="arrow"){
+        drawArrow(start, end, color, brushSize);
+        return;
+    }
+}
+
+function drawArrow(start,end,color,brushSize){
+    const headLength=Math.max(12, brushSize*3);
+    const angle=Math.atan2(end.y-start.y, end.x-start.x);
+    ctx.beginPath();
+    ctx.moveTo(start.x, start.y);
+    ctx.lineTo(end.x, end.y);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(end.x, end.y);
+    ctx.lineTo(end.x-headLength*Math.cos(angle-Math.PI/6), end.y-headLength*Math.sin(angle-Math.PI/6));
+    ctx.lineTo(end.x-headLength*Math.cos(angle-Math.PI/6), end.y-headLength*Math.sin(angle-Math.PI/6));
+    ctx.closePath();
+    ctx.fillStyle=color;
+    ctx.fill();
+}
+
 function redrawBoard(){
     clearOnlyCanvas();
+    boardHistory.forEach(item=>{
+        if(item.type && item.type!=="freehand"){
+            drawShape(item);
+            return;
+        }
 
-    boardHistory.forEach(stroke=>{
-        if(!stroke.points || stroke.points.length<2) return;
+   
+        if(!item.points || item.points.length<2) return;
          ctx.beginPath();
-        ctx.strokeStyle=stroke.color;
-        ctx.lineWidth=stroke.brushSize;
+        ctx.strokeStyle=item.color;
+        ctx.lineWidth=item.brushSize;
         ctx.lineCap="round";
         ctx.lineJoin="round";
-        ctx.moveTo(stroke.points[0].x,stroke.points[0].y);
+        ctx.moveTo(item.points[0].x,item.points[0].y);
 
-        for (let i=1; i<stroke.points.length; i++){
-            ctx.lineTo(stroke.points[i].x, stroke.points[i].y);
+        for (let i=1; i<item.points.length; i++){
+            ctx.lineTo(item.points[i].x, item.points[i].y);
         };
         ctx.stroke();
         ctx.beginPath();
