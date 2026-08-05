@@ -7,6 +7,12 @@ ctx.lineWidth=5;
 ctx.lineCap="round";
 ctx.strokeStyle="black";
 
+const shapeTools=["rect", "line", "circle", "arrow"];
+const MAX_NAME_LENGTH=32;
+const MAX_MESSAGE_LENGTH=1000;
+const MAX_POINTS=20000;
+const SHAPE_TYPES=new Set(['rect', 'line','circle','arrow']);
+
 let isDrawing=false;
 
 const colorPicker=document.getElementById("colorPicker");
@@ -97,7 +103,10 @@ eraserTool.addEventListener("click", ()=>{
     brushTool.classList.remove("active");
 });
 
-const shapeTools=["rect", "line", "circle", "arrow"];
+function num(value){
+    const n = Number(value);
+    return Number.isFinite(n) ? n :0;
+}
 
 function isShapeTool(){
     return shapeTools.includes(currentTool);
@@ -511,7 +520,7 @@ function redrawBoard(){
     });
     
 }
-// zamenit function loadBoard
+
 function clearOnlyCanvas(){
     ctx.clearRect(0,0, canvas.width, canvas.height);
 

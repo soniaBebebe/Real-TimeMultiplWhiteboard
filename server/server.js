@@ -37,7 +37,18 @@ io.on("connection", (socket)=>{
         console.log("User disconnected:", socket.id); });
 
     socket.on("start-draw", (data)=>{
-        socket.to(socket.data.roomId).emit("start-draw", data);
+        const roomId=socket.data.roomId;
+        if(!roomId) return;
+        const payload=data||{};
+        const point = safePoint(payload);
+        if(!point) return;
+        socket.to(roomId).emit("start-draw", {
+            socketId:socket.id,
+            x: point.x,
+            y: point.y,
+            color: safeColor(payload.color),
+            brushSize: safeSize(payload.brushSize)
+        });
     });
 
     socket.on("stroke-end", (stroke)=>{
@@ -48,7 +59,16 @@ io.on("connection", (socket)=>{
     });
 
     socket.on("draw", (data)=>{
-        socket.to(socket.data.roomId).emit("draw", data);
+        socket.to(roomId).emit("draw", {
+            socketId: socket.id,
+            x: point.x,
+            y: point.y
+        });
+        const roomId=socket.data.roomId;
+        if(!roomId) return;
+        const payload=data||{};
+        const point = safePoint(payload);
+        if(!point) return;
     });
 
     socket.on("end-draw", ()=>{
@@ -61,18 +81,22 @@ io.on("connection", (socket)=>{
         socket.to(socket.data.roomId).emit("clear-board");
     });
     socket.on("join-room", (data)=>{
-        socket.join(data.roomId);
-        socket.data.username=data.username;
-        socket.data.roomId=data.roomId;
+        const payload=data || {};
+        const username=String(payload.username||"").trim().slice(0,MAX_NAME_LENGTH);
+        const roomId=String(payload.roomId||"").trim().slice(0,MAX_NAME_LENGTH);
+        if(!username||!roomId) return;
+        socket.join(roomId);
+        socket.data.username=username;
+        socket.data.roomId=roomId;
 
-        const room=getRoom(data.roomId);
-        room.users[socket.id]=data.username;
+        const room=getRoom(roomId);
+        room.users[socket.id]=username;
 
         socket.emit("sync-board", room.boardHistory);
-        socket.emit("room-users", Object.values(room.users));
+        io.to(roomId).emit("room-users", Object.values(room.users));
 
-        socket.to(data.roomId).emit("user-joined", {
-            username:data.username
+        socket.to(roomId).emit("user-joined", {
+            username
         });
     });
     socket.on("chat-message", (message)=>{
