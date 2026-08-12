@@ -212,29 +212,57 @@ socket.on("end-draw", ()=>{
 function startDrawing(event){
     isDrawing=true;
 
-    const x=event.clientX;
-    const y=event.clientY;
+    const {x,y} = pointerPosition(event);
 
     if(isShapeTool()){
         shapeStart={x,y};
+        currentPreview=null;
         return;
     }
     //zakonchili zdes'
 
-    const color=currentTool==="eraser"
-        ?"white"
-        : currentColor;
+    const erasing=currentTool==="eraser";
+
     currentStroke={
-        type:"freehand",
-        color: color,
+        id: newId(),
+        type:erasing ? "eraser": "freehand",
+        color: currentColor,
         brushSize: currentBrushSize,
         points:[
             {x,y}
         ]
     };
-    ctx.beginPath();
-    ctx.moveTo(x,y);
-    socket.emit("start-draw", {x,y,color, brushSize: currentBrushSize});
+    socket.emit("start-draw", {x,y,color: currentColor, brushSize: currentBrushSize, erase: erasing});
+
+    schelduleRender();
+}
+
+function drawStroke(context, item){
+    if (!item) return;
+    if(item.type==="freehand" || item.type==="eraser"){
+        drawFreehand(context, item);
+        return;
+    }
+    drawShape(context, item);
+}
+
+function drawFreehand(context, stroke){
+    const ponts=stroke.points;
+    if (!points || points.length===0) return;
+    context.save();
+    if (stroke.type==="eraser"){
+        context.globalCompositeOperation="destination-out";
+        context.strokeStyle="rgba(0,0,0,1)";
+        context.fillStyle="rgba(0,0,0,1)";
+    } else {
+        context.strokeStyle=stroke.color;
+        context.fillStyle=stroke.color;
+    }
+    // NACHAT OTSUDA!!! 
+    //
+    //
+    //
+    //OTSUDA
 }
 
 function stopDrawing(event){
