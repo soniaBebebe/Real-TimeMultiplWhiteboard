@@ -4,6 +4,34 @@ const cors = require("cors");
 
 const {Server} = require("socket.io");
 
+const MAX_NAME_LENGTH=32;
+const MAX_MESSAGE_LENGTH=1000;
+const MAX_POINTS=20000;
+const SHAPE_TYPES=new Set(['rect', 'line','circle','arrow']);
+
+function num(value){
+    const n = Number(value);
+    return Number.isFinite(n) ? n :0;
+}
+
+function safeSize(value){
+    const n=Number(value);
+    if(!Number.isFinite(n)) return 5;
+    return Math.min(100, Math.max(1,n));
+}
+
+function safeColor(value){
+    if(typeof value !=="string") return "#000000";
+    return /^#[0-9a-fA-F]{3,8}$/.test(value) || /^[a-zA-Z]{1,20}$/.test(value)
+    ? value
+    : "#000000";
+}
+
+function safePoint(point){
+    if(!point || typeof point !=="object") return null;
+    return {x: num(point.x), y: num(point.y)};
+}
+
 const app = express();
 app.use(cors());
 
@@ -59,16 +87,16 @@ io.on("connection", (socket)=>{
     });
 
     socket.on("draw", (data)=>{
-        socket.to(roomId).emit("draw", {
-            socketId: socket.id,
-            x: point.x,
-            y: point.y
-        });
         const roomId=socket.data.roomId;
         if(!roomId) return;
         const payload=data||{};
         const point = safePoint(payload);
         if(!point) return;
+        socket.to(roomId).emit("draw", {
+            socketId: socket.id,
+            x: point.x,
+            y: point.y
+        });
     });
 
     socket.on("end-draw", ()=>{

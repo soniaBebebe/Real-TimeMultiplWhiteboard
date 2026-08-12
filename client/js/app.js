@@ -8,10 +8,6 @@ ctx.lineCap="round";
 ctx.strokeStyle="black";
 
 const shapeTools=["rect", "line", "circle", "arrow"];
-const MAX_NAME_LENGTH=32;
-const MAX_MESSAGE_LENGTH=1000;
-const MAX_POINTS=20000;
-const SHAPE_TYPES=new Set(['rect', 'line','circle','arrow']);
 
 let isDrawing=false;
 
@@ -102,11 +98,6 @@ eraserTool.addEventListener("click", ()=>{
     eraserTool.classList.add("active");
     brushTool.classList.remove("active");
 });
-
-function num(value){
-    const n = Number(value);
-    return Number.isFinite(n) ? n :0;
-}
 
 function isShapeTool(){
     return shapeTools.includes(currentTool);
