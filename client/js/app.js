@@ -62,17 +62,20 @@ socket.on("clear-board", ()=>{
     clearCanvas();
 });
 
-socket.on("sync-board", (newHistory)=>{
-        boardHistory=newHistory;
-        redoHistory=[];
-
-        redrawBoard();
-        // saveBoard();
+socket.on("sync-board", (history)=>{
+        boardHistory= Array.isArray(history) ? history:[];
+        invalidateHistory();
     });
 
+socket.on("shape-preview", (data)=>{
+    livePreviews[data.socketId]=data.shape;
+    schelduleRender();
+});
+
 socket.on("stroke-add", (stroke)=>{
+    if(!stroke || boardHistory.some((item)=> item.id === stroke.id)) return;
     boardHistory.push(stroke);
-    redrawBoard();
+    invalidateHistory();
 });
 
 socket.on("room-users", (users)=>{
@@ -176,21 +179,28 @@ function draw(event){
 }
 
 socket.on("start-draw", (data)=>{
-    ctx.beginPath();
-    ctx.moveTo(data.x, data.y);
+    liveStrokes[data.socketId]={
+        type: "freehand",
+        color: data.color,
+        brushSize: data.brushSize,
+        points: [{x: data.x, y:data.y}]
+    };
+    schelduleRender();
 });
 
 socket.on("draw", (data)=>{
-    ctx.strokeStyle=data.color;
-    ctx.lineWidth=data.brushSize;
-    ctx.lineTo(data.x, data.y);
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.moveTo(data.x, data.y);
+    const stroke=liveStrokes[data.socktId];
+    if(!stroke) return;
+    stroke.points.push({x: data.x, y:data.y});
+    schelduleRender();
 });
 
-socket.on("end-draw", ()=>{
-    ctx.beginPath();
+socket.on("end-draw", (data)=>{
+    const id=data && data.socketId;
+    if (!id) return;
+    delete liveStrokes[id];
+    delete livePreviews[id];
+    schelduleRender();
 });
 
 function startDrawing(event){
