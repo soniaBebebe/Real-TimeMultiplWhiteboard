@@ -159,36 +159,20 @@ function draw(event){
         return
     }
 
-    const color=currentTool==="eraser"
-        ?"white"
-        :currentColor;
-    
-    ctx.strokeStyle=color;
-    ctx.lineWidth=currentBrushSize;
-    ctx.lineTo(x,y);
-    ctx.stroke();
+    if(!currentStroke) return;
+
+    const last = currentStroke.points[currentStroke.points.length - 1];
+    if(last && Math.hypot(x - last.x, y - last.y) <1) return;
+
     currentStroke.points.push({x,y});
 
 
     socket.emit("draw",{
         x,
         y,
-        color,
-        brushSize:currentBrushSize
     });
 
-    // boardHistory.push({
-    //     x,
-    //     y,
-    //     color: currenTool==="eraser"?"white": currentColor,
-    //     brushSize:currentBrushSize
-    // });
-    // saveBoard();
-
-    // redoHistory=[];
-
-    ctx.beginPath();
-    ctx.moveTo(x,y);
+    schelduleRender();
 }
 
 socket.on("start-draw", (data)=>{
@@ -221,20 +205,40 @@ function startDrawing(event){
     }
     //zakonchili zdes'
 
-    const erasing=currentTool==="eraser";
-
     currentStroke={
         id: newId(),
-        type:erasing ? "eraser": "freehand",
+        type:"freehand",
         color: currentColor,
         brushSize: currentBrushSize,
         points:[
             {x,y}
         ]
     };
-    socket.emit("start-draw", {x,y,color: currentColor, brushSize: currentBrushSize, erase: erasing});
+    socket.emit("start-draw", {x,y,color: currentStroke.color, brushSize: currentBrushSize});
 
     schelduleRender();
+}
+
+function commitStroke(stroke){
+    stroke.author = socket.id;
+    boardHistory.push(stroke);
+    socket.emit("stroke-end", stroke);
+    invalidateHistory();
+}
+
+function strokeColor(){
+    return currentTool==="eraser"?"white": currentColor;
+}
+
+function pointerPosition(event){
+    const rect=canvas.getBoundingClientRect();
+    return {x: event.clientX - rect.left, y: event.clientY - rect.top};
+}
+
+function newId(){
+    return crypto.randomUUID
+    ? crypto.randomUUID()
+    : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 }
 
 function drawStroke(context, item){
@@ -258,11 +262,25 @@ function drawFreehand(context, stroke){
         context.strokeStyle=stroke.color;
         context.fillStyle=stroke.color;
     }
-    // NACHAT OTSUDA!!! 
-    //
-    //
-    //
-    //OTSUDA
+    context.lineWidth = stroke.brushSize;
+    context.lineCap="round";
+    context.lineJoin="round";
+
+    if(points.length===1){
+        context.beginPath();
+        context.arc(points[0].x, points[0].y, stroke.brushSize / 2, 0, Math.PI * 2);
+        context.fill();
+        context.restore();
+        return;
+    }
+    context.beginPath();
+    context.moveTo(points[0].x, points[0].y);
+    for (let i=1; i<points.length; i++){
+        context.lineTo(points[i].x, points[i].y);
+    }
+    context.stroke();
+
+    context.restore();
 }
 
 function stopDrawing(event){
@@ -271,32 +289,32 @@ function stopDrawing(event){
 
     if(isShapeTool()){
         if(shapeStart){
-            const shape={
+            const{x,y}=pointerPosition(event);
+            commitStroke({
+                id:newId(),
                 type:currentTool,
                 color:currentColor,
                 brushSize:currentBrushSize,
                 start:shapeStart,
-                end:{x:event.clientX, y:event.clientY}
-            };
-            boardHistory.push(shape);
-            redoHistory=[];
-            redrawBoard();
-            socket.emit("stroke-end", shape);
+                end:{x,y}
+            });
             shapeStart=null;
         }
+        currentPreview=null;
         socket.emit("end-draw");
+        schelduleRender();
         return;
     }
 
     if(currentStroke){
-        boardHistory.push(currentStroke);
-        redoHistory=[];
-        socket.emit("stroke-end", currentStroke);
+        if(currentStroke.points.length >=2){
+            commitStroke(currentStroke);
+        }
         currentStroke=null;
     }
 
-    ctx.beginPath();
     socket.emit("end-draw");
+    schelduleRender();
 }
 
 function clearCanvas(){
