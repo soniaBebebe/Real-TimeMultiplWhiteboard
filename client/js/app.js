@@ -45,12 +45,13 @@ let roomId="";
 // let startY=0;
 
 let boardHistory=[];
+const liveStrokes={};
+const livePreviews={};
+let currentPreview=null;
 
 let usersList=document.getElementById("usersList");
 
 let onlineUsers=[];
-
-let redoHistory=[];
 
 let currentStroke=null;
 let shapeStart=null;
@@ -58,9 +59,73 @@ let shapeStart=null;
 let currentTool="brush";
 brushTool.classList.add("active");
 
+const historyCanvaas=document.createElement("canvas");
+const historyCtx=historyCanvaas.getContext("2d");
+let historyDirty=true;
+let frameRequested=false;
+
+function resizeHistoryCanvas(){
+    historyCanvaas.width=canvas.width;
+    historyCanvaas.height=canvas.height;
+    historyDirty=true;
+}
+
+function invalidateHistory(){
+    historyDirty=true;
+    schelduleRender();
+}
+
+function schelduleRender(){
+    if (frameRequested) return;
+    frameRequested=true;
+    requestAnimationFrame(()=>{
+        frameRequested=false;
+        renderUsers();
+    });
+}
+
+function renderHistory(){
+    historyCtx.clearRect(0,0,historyCanvaas.width, historyCanvaas.height);
+    boardHistory.forEach((stroke)=>drawStroke(historyCtx,stroke));
+    historyDirty=false;
+}
+
+function render(){
+    if(historyDirty) renderHistory();
+
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    ctx.drawImage(historyCanvaas,0,0);
+    Object.values(liveStrokes).forEach((stroke)=> drawStroke(ctx,stroke));
+    Object.values(livePreviews).forEach((shape)=>drawStroke(ctx,shape));
+
+    if(currentStroke) drawStroke(ctx,currentStroke);
+    if(currentPreview) drawStroke(ctx,currentPreview);
+
+    window.addEventListener("canvas-resized", ()=>{
+        resizeHistoryCanvas();
+        schelduleRender();
+    })
+}
+
+resizeHistoryCanvas();
+schelduleRender();
+
 socket.on("clear-board", ()=>{
-    clearCanvas();
+    boardHistory=[];
+    Object.keys(liveStrokes).forEach((k)=> delete liveStrokes[k]);
+    Object.keys(livePreviews).forEach((k)=>delete livePreviews[k]);
+    currentStroke=null;
+    currentPreview=null;
+    shapeStart=null;
+    invalidateHistory();
 });
+
+socket.on("stroke-remove", (id)=>{
+    const next=boardHistory.filter((stroke)=>stroke.id !==id);
+    if(next.length==boardHistory.length) return;
+    boardHistory=next;
+    invalidateHistory();
+})
 
 socket.on("sync-board", (history)=>{
         boardHistory= Array.isArray(history) ? history:[];
@@ -81,25 +146,6 @@ socket.on("stroke-add", (stroke)=>{
 socket.on("room-users", (users)=>{
     onlineUsers=users;
     renderUsers();
-});
-
-socket.on("shape-preview", (shape)=>{
-    redrawBoard();
-    drawShape(shape);
-});
-
-window.addEventListener("canvas-resized", redrawBoard);
-
-brushTool.addEventListener("click", ()=>{
-    currentTool="brush";
-    brushTool.classList.add("active");
-    eraserTool.classList.remove("active");
-});
-
-eraserTool.addEventListener("click", ()=>{
-    currentTool="eraser";
-    eraserTool.classList.add("active");
-    brushTool.classList.remove("active");
 });
 
 function isShapeTool(){
@@ -145,20 +191,18 @@ redoBtn.addEventListener("click",()=>{
 function draw(event){
     if (!isDrawing) return;
 
-    const x=event.clientX;
-    const y=event.clientY;
+    const {x,y}=pointerPosition(event);
 
     if(isShapeTool()){
-        const shape={
+        const currentPreview={
             type:currentTool,
             color:currentColor,
             brushSize:currentBrushSize,
             start:shapeStart,
             end:{x,y}
         };
-        redrawBoard();
-        drawShape(shape);
-        socket.emit("shape-preview", shape);
+        socket.emit("shape-preview", currentPreview);
+        schelduleRender();
         return
     }
 
@@ -189,7 +233,7 @@ socket.on("start-draw", (data)=>{
 });
 
 socket.on("draw", (data)=>{
-    const stroke=liveStrokes[data.socktId];
+    const stroke=liveStrokes[data.socketId];
     if(!stroke) return;
     stroke.points.push({x: data.x, y:data.y});
     schelduleRender();
@@ -261,7 +305,7 @@ function drawStroke(context, item){
 }
 
 function drawFreehand(context, stroke){
-    const ponts=stroke.points;
+    const points=stroke.points;
     if (!points || points.length===0) return;
     context.save();
     if (stroke.type==="eraser"){
@@ -495,29 +539,29 @@ function renderUsers(){
     })
 }
 
-function drawShape(shape){
+function drawShape(context,shape){
     const{type,color,brushSize, start,end}=shape;
-    ctx.beginPath();
-    ctx.strokeStyle=color;
-    ctx.fillStyle=color;
-    ctx.lineWidth=brushSize;
-    ctx.lineCap="round";
-    ctx.lineJoin="round";
+    context.beginPath();
+    context.strokeStyle=color;
+    context.fillStyle=color;
+    context.lineWidth=brushSize;
+    context.lineCap="round";
+    context.lineJoin="round";
 
     if(type==="rect"){
-        ctx.strokeRect(start.x, start.y, end.x-start.x, end.y-start.y);
+        context.strokeRect(start.x, start.y, end.x-start.x, end.y-start.y);
         return;
     }
     if(type==="line"){
-        ctx.moveTo(start.x, start.y);
-        ctx.lineTo(end.x, end.y);
-        ctx.stroke();
+        context.moveTo(start.x, start.y);
+        context.lineTo(end.x, end.y);
+        context.stroke();
         return;
     }
     if(type==="circle"){
         const radius=Math.hypot(end.x-start.x, end.y-start.y);
-        ctx.arc(start.x, start.y, radius, 0, Math.PI*2);
-        ctx.stroke();
+        context.arc(start.x, start.y, radius, 0, Math.PI*2);
+        context.stroke();
         return;
     }
     if(type==="arrow"){
@@ -526,20 +570,20 @@ function drawShape(shape){
     }
 }
 
-function drawArrow(start,end,color,brushSize){
+function drawArrow(context,start,end,color,brushSize){
     const headLength=Math.max(12, brushSize*3);
     const angle=Math.atan2(end.y-start.y, end.x-start.x);
-    ctx.beginPath();
-    ctx.moveTo(start.x, start.y);
-    ctx.lineTo(end.x, end.y);
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.moveTo(end.x, end.y);
-    ctx.lineTo(end.x-headLength*Math.cos(angle-Math.PI/6), end.y-headLength*Math.sin(angle-Math.PI/6));
-    ctx.lineTo(end.x-headLength*Math.cos(angle+Math.PI/6), end.y-headLength*Math.sin(angle+Math.PI/6));
-    ctx.closePath();
-    ctx.fillStyle=color;
-    ctx.fill();
+    context.beginPath();
+    context.moveTo(start.x, start.y);
+    context.lineTo(end.x, end.y);
+    context.stroke();
+    context.beginPath();
+    context.moveTo(end.x, end.y);
+    context.lineTo(end.x-headLength*Math.cos(angle-Math.PI/6), end.y-headLength*Math.sin(angle-Math.PI/6));
+    context.lineTo(end.x-headLength*Math.cos(angle+Math.PI/6), end.y-headLength*Math.sin(angle+Math.PI/6));
+    context.closePath();
+    context.fillStyle=color;
+    context.fill();
 }
 
 function redrawBoard(){
