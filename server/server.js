@@ -1,3 +1,4 @@
+const {randomUUID}=require("crypto");
 const express = require("express");
 const http = require("http");
 const cors = require("cors");
@@ -30,6 +31,46 @@ function safeColor(value){
 function safePoint(point){
     if(!point || typeof point !=="object") return null;
     return {x: num(point.x), y: num(point.y)};
+}
+
+function sanitizeShape(shape){
+    if(!shape||typeof shape !== "object") return null;
+    if(!SHAPE_TYPES.has(shape.type)) return null;
+
+    const start=safePoint(shape.start);
+    const end=safePoint(shape.end);
+    if(!start || !end) return null;
+
+    return{
+        type: shape.type,
+        color:safeColor(shape.color),
+        brushSize: safeSize(shape.brushSize),
+        start,
+        end
+    };
+}
+
+function sanitizeStroke(stroke){
+    if(!stroke ||typeof stroke !=="object") return null;
+
+    const id=
+    typeof stroke.id ==="string" && stroke.id.length > 0 && stroke.id.length <=64
+    ? stroke.id
+    :randomUUID();
+
+    if (stroke.type==="freehand"|| stroke.type==="eraser"){
+        if(!Array.isArray(stroke.points)||stroke.points.length <2) return null;
+        return{
+            id,
+            type:stroke.type,
+            color:safeColor(stroke.color),
+            brushSize: safeSize(stroke.brushSize),
+            points: stroke.points.slice(0, MAX_POINTS).map(safePoint).filter(Boolean)
+        };
+    }
+    const shape=sanitizeShape(stroke);
+    if(!shape) return null;
+    return{id, ...shape};
 }
 
 const app = express();
