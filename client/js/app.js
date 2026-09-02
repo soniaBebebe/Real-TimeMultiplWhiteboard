@@ -194,7 +194,7 @@ function draw(event){
 
     if(isShapeTool()){
         if (!shapeStart) return;
-        const currentPreview={
+        currentPreview={
             type:currentTool,
             color:currentColor,
             brushSize:currentBrushSize,
@@ -269,6 +269,8 @@ function startDrawing(event){
         ]
     };
     socket.emit("start-draw", {x,y,color: currentStroke.color, brushSize: currentBrushSize});
+
+    if(event.button !==0) return;
 
     schelduleRender();
 }
