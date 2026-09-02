@@ -201,8 +201,9 @@ function draw(event){
             start:shapeStart,
             end:{x,y}
         };
+        redrawBoard();
+        drawShape(currentPreview);
         socket.emit("shape-preview", currentPreview);
-        schelduleRender();
         return
     }
 
