@@ -80,7 +80,7 @@ function schelduleRender(){
     frameRequested=true;
     requestAnimationFrame(()=>{
         frameRequested=false;
-        renderUsers();
+        render();
     });
 }
 
@@ -99,13 +99,13 @@ function render(){
     Object.values(livePreviews).forEach((shape)=>drawStroke(ctx,shape));
 
     if(currentStroke) drawStroke(ctx,currentStroke);
-    if(currentPreview) drawStroke(ctx,currentPreview);
+    if(currentPreview) drawStroke(ctx,currentPreview); 
+}
 
-    window.addEventListener("canvas-resized", ()=>{
+window.addEventListener("canvas-resized", ()=>{
         resizeHistoryCanvas();
         schelduleRender();
     })
-}
 
 resizeHistoryCanvas();
 schelduleRender();
@@ -161,7 +161,7 @@ arrowTool.addEventListener("click", ()=>setTool("arrow"));
 
 canvas.addEventListener("mousedown", startDrawing);
 
-canvas.addEventListener("mouseup", stopDrawing);
+window.addEventListener("mouseup", stopDrawing);
 
 canvas.addEventListener("mousemove", draw);
 
@@ -171,22 +171,21 @@ colorPicker.addEventListener("input", (event)=>{
 });
 
 brushSize.addEventListener("input", (event)=>{
-    currentBrushSize=event.target.value;
-    ctx.lineWidth=currentBrushSize;
+    currentBrushSize=Number(event.target.value)||1;
 });
 
 clearBoardButton.addEventListener("click",()=>{
-    clearCanvas();
+    if(!roomId){
+        boardHistory=[];
+        invalidateHistory();
+        return;
+    }
     socket.emit("clear-board");
 });
 
-undoBtn.addEventListener("click", ()=>{
-    undo();
-});
+undoBtn.addEventListener("click", ()=> socket.emit("undo"));
 
-redoBtn.addEventListener("click",()=>{
-    redo();
-});
+redoBtn.addEventListener("click",()=> socket.emit("redo"));
 
 function draw(event){
     if (!isDrawing) return;
@@ -194,6 +193,7 @@ function draw(event){
     const {x,y}=pointerPosition(event);
 
     if(isShapeTool()){
+        if (!shapeStart) return;
         const currentPreview={
             type:currentTool,
             color:currentColor,
@@ -201,9 +201,8 @@ function draw(event){
             start:shapeStart,
             end:{x,y}
         };
-        redrawBoard();
-        drawShape(currentPreview);
         socket.emit("shape-preview", currentPreview);
+        schelduleRender();
         return
     }
 
@@ -279,10 +278,6 @@ function commitStroke(stroke){
     boardHistory.push(stroke);
     socket.emit("stroke-end", stroke);
     invalidateHistory();
-}
-
-function strokeColor(){
-    return currentTool==="eraser"?"white": currentColor;
 }
 
 function pointerPosition(event){
@@ -370,22 +365,6 @@ function stopDrawing(event){
 
     socket.emit("end-draw");
     schelduleRender();
-}
-
-function clearCanvas(){
-    ctx.clearRect(
-        0,0,canvas.width, canvas.height
-    );
-    ctx.fillStyle="white";
-    ctx.fillRect(
-        0,0,canvas.width,canvas.height
-    );
-    // if(roomId){
-    //     localStorage.removeItem(`whiteboard-${roomId}`);
-    //     boardHistory=[];
-    // }
-    boardHistory=[];
-    redoHistory=[];
 }
 
 joinRoomBtn.addEventListener("click",(event)=>{
@@ -496,37 +475,6 @@ socket.on("user-left", (socketId)=>{
     delete removeCursors[socketId];
 });
 
-function saveBoard(){
-    if(!roomId) return;
-
-    localStorage.setItem(
-        `whiteboard-${roomId}`,
-        JSON.stringify(boardHistory)
-    );
-}
-
-function loadBoard(){
-    const savedBoard=localStorage.getItem(`whiteboard-${roomId}`);
-
-    if (!savedBoard) return;
-
-    boardHistory=JSON.parse(savedBoard);
-    // ctx.beginPath();
-
-    // boardHistory.forEach(point=>{
-    //     ctx.strokeStyle=point.color;
-    //     ctx.lineWidth=point.brushSize;
-
-    //     ctx.lineTo(point.x, point.y);
-    //     ctx.stroke();
-
-    //     ctx.beginPath();
-    //     ctx.moveTo(point.x, point.y);
-    // });
-    redrawBoard();
-
-}
-
 function renderUsers(){
     usersList.innerHTML="";
     onlineUsers.forEach(user=>{
@@ -566,7 +514,7 @@ function drawShape(context,shape){
         return;
     }
     if(type==="arrow"){
-        drawArrow(start, end, color, brushSize);
+        drawArrow(context, start, end, color, brushSize);
         return;
     }
 }
@@ -587,61 +535,6 @@ function drawArrow(context,start,end,color,brushSize){
     context.fill();
 }
 
-function redrawBoard(){
-    clearOnlyCanvas();
-    boardHistory.forEach(item=>{
-        if(item.type && item.type!=="freehand"){
-            drawShape(item);
-            return;
-        }
-
-   
-        if(!item.points || item.points.length<2) return;
-         ctx.beginPath();
-        ctx.strokeStyle=item.color;
-        ctx.lineWidth=item.brushSize;
-        ctx.lineCap="round";
-        ctx.lineJoin="round";
-        ctx.moveTo(item.points[0].x,item.points[0].y);
-
-        for (let i=1; i<item.points.length; i++){
-            ctx.lineTo(item.points[i].x, item.points[i].y);
-        };
-        ctx.stroke();
-        ctx.beginPath();
-    });
-    
-}
-
-function clearOnlyCanvas(){
-    ctx.clearRect(0,0, canvas.width, canvas.height);
-
-    ctx.fillStyle="white";
-    ctx.fillRect(0,0, canvas.width, canvas.height);
-}
-
-function undo(){
-    if(boardHistory.length===0) return;
-
-    const lastPoint=boardHistory.pop();
-
-    redoHistory.push(lastPoint);
-
-    redrawBoard();
-
-    socket.emit("sync-board", boardHistory);
-}
-
-function redo(){
-    if(redoHistory.length===0) return;
-    const restoredPoint=redoHistory.pop();
-
-    boardHistory.push(restoredPoint);
-
-    redrawBoard();
-
-    socket.emit("sync-board", boardHistory);
-}
 function setTool(tool){
     currentTool=tool;
 
